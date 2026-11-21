@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>QR Links Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #f8f9fa;
+    --text: #16181b;
+    --muted: #5e6570;
+    --faint: #8b929c;
+    --line: #e3e6eb;
+    --accent: #0f6e66;
+    --accent-hover: #0b5a53;
+    --accent-soft: #e2f0ee;
+    --danger: #b42318;
+    --danger-soft: #fdecea;
+    --warn-soft: #fdf3e1;
+    --warn: #8a5a00;
+    --c-scan: #3b6fd8;
+    --c-download: #0f6e66;
+    --c-ad: #d08a12;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .05);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  [hidden] { display: none !important; }
+  h1, h2, h3 { margin: 0; font-weight: 600; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 16px; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 38px; padding: 8px 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    font-weight: 500; cursor: pointer; text-decoration: none; white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn.danger { color: var(--danger); }
+  .btn.danger:hover { background: var(--danger-soft); border-color: #f5c2bc; }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+  .btn.ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn.sm { min-height: 32px; padding: 4px 10px; font-size: 14px; border-radius: 8px; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .seg button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  /* forms */
+  .field { display: block; margin-bottom: 14px; }
+  label.field > span { display: block; font-weight: 500; margin-bottom: 6px; }
+  label.field small, .hint { display: block; color: var(--muted); font-size: 13px; margin-top: 5px; }
+  input[type=text], input[type=url], input[type=password], input[type=number], input[type=search], select, textarea {
+    width: 100%; min-height: 42px; padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+    font: inherit; color: inherit;
+  }
+  textarea { min-height: 76px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin-bottom: 14px; }
+  .check input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+  .check small { display: block; color: var(--muted); font-size: 13px; }
+
+  .seg { display: inline-flex; padding: 3px; gap: 2px; background: #eaecef; border-radius: 10px; }
+  .seg button {
+    border: 0; background: transparent; padding: 6px 12px; border-radius: 8px;
+    font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap;
+  }
+  .seg button[aria-pressed=true] { background: var(--surface); color: var(--text); box-shadow: var(--shadow), 0 0 0 1px var(--line); }
+  .seg.block { display: flex; }
+  .seg.block button { flex: 1; }
+
+  /* login */
+  .login { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+  .login-card { width: 100%; max-width: 380px; }
+  .login-card h1 { margin: 18px 0 4px; }
+  .login-card p.lead { color: var(--muted); margin: 0 0 22px; }
+  .login-card .btn { width: 100%; min-height: 44px; }
+  .err { color: var(--danger); font-size: 14px; margin: 12px 0 0; }
+
+  /* layout */
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 20px;
+    padding: 10px 24px; background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .tabs { display: flex; gap: 2px; }
+  .tabs button {
+    border: 0; background: transparent; padding: 8px 14px; border-radius: 8px;
+    font-weight: 500; color: var(--muted); cursor: pointer;
+  }
+  .tabs button:hover { color: var(--text); background: var(--surface-2); }
+  .tabs button[aria-selected=true] { color: var(--accent); background: var(--accent-soft); }
+  .top-actions { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+  main { max-width: 1160px; margin: 0 auto; padding: 24px 24px 64px; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .page-head .tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+  .card + .card, .grid2 + .card, .card + .grid2, .kpis + .card { margin-top: 16px; }
+  .grid2 > .card { margin-top: 0; }
+  .card.flush { padding: 0; overflow: hidden; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .empty { padding: 48px 20px; text-align: center; color: var(--muted); }
+  .empty strong { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+
+  /* dashboard */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
+  .kpi span { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+  .kpi span i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .kpi strong { display: block; font-size: 28px; font-weight: 600; margin-top: 4px; letter-spacing: -.01em; }
+  .kpi em { display: block; font-style: normal; color: var(--faint); font-size: 13px; }
+  .chart-box { position: relative; height: 290px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .bars { display: grid; gap: 10px; margin-top: 12px; }
+  .bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; font-size: 14px; }
+  .bar-row .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-row .track { grid-column: 1 / -1; height: 6px; background: #edf0f2; border-radius: 3px; overflow: hidden; }
+  .bar-row .track b { display: block; height: 100%; background: var(--c-scan); border-radius: 3px; }
+  .muted { color: var(--muted); }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 500; font-size: 13px; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  th.r, td.r { text-align: right; }
+  .stats-table td, .stats-table th { padding-left: 0; padding-right: 0; background: none; }
+  .stats-table th + th, .stats-table td + td { padding-left: 16px; }
+
+  .qr-thumb { display: block; width: 52px; height: 52px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; }
+  .qr-thumb svg { display: block; width: 100%; height: 100%; }
+  .q-name { font-weight: 600; }
+  .q-sub { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+  .q-sub a { color: var(--accent); text-decoration: none; }
+  .list td.c-main { width: 100%; max-width: 0; }
+  .q-dest { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .linkbtn { border: 0; background: none; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 13px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 13px; font-weight: 500; background: #eef0f3; color: var(--muted); white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  .badge.on { background: var(--accent-soft); color: var(--accent); }
+  .badge.ad { background: var(--warn-soft); color: var(--warn); }
+  .badge.off { background: var(--danger-soft); color: var(--danger); }
+  .mini-stats { display: flex; gap: 14px; font-size: 14px; }
+  .mini-stats span { display: inline-flex; flex-direction: column; line-height: 1.25; }
+  .mini-stats b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mini-stats small { color: var(--faint); font-size: 12px; white-space: nowrap; }
+  .actions { white-space: nowrap; text-align: right; }
+
+  /* ads */
+  .ad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .ad-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .ad-card .img { aspect-ratio: 16 / 9; background: #eceff2; display: grid; place-items: center; overflow: hidden; }
+  .ad-card .img img { width: 100%; height: 100%; object-fit: cover; }
+  .ad-card .body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .ad-card .title-row { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+  .ad-card .title-row strong { font-weight: 600; }
+  .ad-card .headline { color: var(--muted); font-size: 14px; }
+  .ad-card .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); }
+
+  /* dialogs */
+  dialog {
+    width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px);
+    padding: 0; border: 0; border-radius: 16px; background: var(--surface); color: var(--text);
+    box-shadow: 0 24px 48px rgba(16, 24, 40, .18);
+  }
+  dialog::backdrop { background: rgba(16, 20, 26, .45); }
+  .dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 0; }
+  .dlg-body { padding: 18px 22px 4px; }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 22px 20px; }
+  .x { border: 0; background: none; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 22px; line-height: 1; }
+  .x:hover { background: var(--surface-2); }
+  .sub-panel { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 2px; margin-bottom: 14px; }
+  .inline-note { font-size: 13px; padding: 8px 12px; border-radius: 8px; margin: -6px 0 14px; }
+  .inline-note.ok { background: var(--accent-soft); color: var(--accent); }
+  .inline-note.warn { background: var(--warn-soft); color: var(--warn); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .qr-big { width: 260px; max-width: 100%; margin: 0 auto 14px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .qr-big svg { display: block; width: 100%; height: auto; }
+  .qr-link { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .qr-link input { flex: 1; font-size: 14px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-row .btn { flex: 1; }
+
+  .img-drop { display: flex; gap: 14px; align-items: center; }
+  .img-drop .preview { width: 112px; height: 72px; flex: none; border-radius: 8px; border: 1px dashed #c9ced6; background: var(--surface-2); display: grid; place-items: center; overflow: hidden; color: var(--faint); font-size: 12px; }
+  .img-drop .preview img { width: 100%; height: 100%; object-fit: cover; }
+  .or { text-align: center; color: var(--faint); font-size: 13px; margin: 8px 0; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+    background: #1e2226; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px;
+    opacity: 0; pointer-events: none; transition: .2s; z-index: 100; max-width: calc(100vw - 32px);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+  .toast.error { background: var(--danger); }
+  .loading-bar { position: fixed; top: 0; left: 0; height: 2px; background: var(--accent); width: 0; z-index: 50; transition: width .3s; }
+
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .topbar { flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px; }
+    .tabs { order: 3; width: 100%; overflow-x: auto; }
+    .top-actions .lbl { display: none; }
+    main { padding: 18px 16px 48px; }
+    .card { padding: 16px; }
+    .kpi strong { font-size: 24px; }
+    .chart-box { height: 230px; }
+    .page-head .tools { width: 100%; }
+    .page-head .tools input { flex: 1; min-width: 0; }
+    .row2 { grid-template-columns: 1fr; gap: 0; }
+    .stats-table .hide-sm { display: none; }
+  }
+  @media (max-width: 1040px) {
+    .list thead { display: none; }
+    .list tr { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 8px 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .list tr:last-child { border-bottom: 0; }
+    .list td { padding: 0; border: 0; min-width: 0; }
+    .list td.c-main { width: auto; max-width: none; }
+    .list td.c-thumb { grid-row: span 5; }
+    .list td.actions { text-align: left; }
+    .q-dest { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="loading-bar" id="loadingBar"></div>
+
+<!-- ───────── Login ───────── -->
+<div id="loginView" class="login" hidden>
+  <form id="loginForm" class="card login-card">
+    <div class="brand"><span class="brand-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm8-2h3v3h-3zm3 3h3v3h-3zm-3 3h3v2h-3zm5-6h3v3h-3zm0 6h3v2h-3z"/></svg></span>QR Links</div>
+    <h1>เข้าสู่ระบบหลังบ้าน</h1>
+    <p class="lead">จัดการ QR code โฆษณา และดูสถิติ</p>
+    <label class="field"><span>รหัสผ่าน</span><input type="password" id="loginPw" autocomplete="current-password" required></label>
+    <button class="btn primary" id="loginBtn">เข้าสู่ระบบ</button>
+    <p class="err" id="loginErr" role="alert"></p>
+  </form>
+</div>
+
+<!-- ───────── App ───────── -->
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm8-2h3v3h-3zm3 3h3v3h-3zm-3 3h3v2h-3zm5-6h3v3h-3zm0 6h3v2h-3z"/></svg></span>QR Links</div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-view="dashboard">ภาพรวม</button>
+      <button role="tab" data-view="qrs">QR Codes</button>
+      <button role="tab" data-view="ads">โฆษณา</button>
+    </nav>
+    <div class="top-actions">
+      <a class="btn ghost sm" id="sheetLink" target="_blank" rel="noopener" title="เปิดข้อมูลดิบใน Google Sheet">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 9v12"/></svg><span class="lbl">Google Sheet</span></a>
+      <button class="btn ghost sm" id="pwBtn" title="เปลี่ยนรหัสผ่าน">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="lbl">รหัสผ่าน</span></button>
+      <button class="btn ghost sm" id="logoutBtn" title="ออกจากระบบ">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg><span class="lbl">ออก</span></button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Dashboard -->
+    <section id="view-dashboard" hidden>
+      <div class="page-head">
+        <h1>ภาพรวม</h1>
+        <div class="tools">
+          <select id="fQr" aria-label="เลือก QR" style="width:auto;max-width:240px"></select>
+          <div class="seg" id="fDays" role="group" aria-label="ช่วงเวลา">
+            <button data-days="7">7 วัน</button>
+            <button data-days="30">30 วัน</button>
+            <button data-days="90">90 วัน</button>
+            <button data-days="0">ทั้งหมด</button>
+          </div>
+        </div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><span><i style="background:var(--c-scan)"></i>สแกน</span><strong class="num" id="kScan">–</strong><em>จำนวนครั้งที่เปิดลิงก์</em></div>
+        <div class="kpi"><span><i style="background:var(--c-download)"></i>ดาวน์โหลด</span><strong class="num" id="kDl">–</strong><em id="kDlRate">&nbsp;</em></div>
+        <div class="kpi"><span><i style="background:var(--c-ad)"></i>คลิกโฆษณา</span><strong class="num" id="kAd">–</strong><em id="kAdViews">&nbsp;</em></div>
+        <div class="kpi"><span>อัตราคลิกโฆษณา</span><strong class="num" id="kCtr">–</strong><em>คลิก ÷ จำนวนครั้งที่แสดงโฆษณา</em></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>รายวัน</h2>
+          <div class="legend">
+            <span><i style="background:var(--c-scan)"></i>สแกน</span>
+            <span><i style="background:var(--c-download)"></i>ดาวน์โหลด</span>
+            <span><i style="background:var(--c-ad)"></i>คลิกโฆษณา</span>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="chart" aria-label="กราฟสถิติรายวัน"></canvas></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>ประเทศ</h2><div class="bars" id="tCountries"></div></div>
+        <div class="card"><h2>จังหวัด / รัฐ</h2><div class="bars" id="tRegions"></div></div>
+      </div>
+      <div class="card">
+        <h2>แยกตาม QR</h2>
+        <table class="stats-table">
+          <thead><tr><th>QR</th><th class="r">สแกน</th><th class="r">ดาวน์โหลด</th><th class="r">คลิกโฆษณา</th><th class="r hide-sm">อัตราดาวน์โหลด</th></tr></thead>
+          <tbody id="tPerQr"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- QR list -->
+    <section id="view-qrs" hidden>
+      <div class="page-head">
+        <h1>QR Codes</h1>
+        <div class="tools">
+          <input type="search" id="qrSearch" placeholder="ค้นหาชื่อหรือลิงก์" style="width:220px">
+          <button class="btn primary" id="newQrBtn">+ สร้าง QR</button>
+        </div>
+      </div>
+      <div class="card flush">
+        <table class="list">
+          <thead><tr><th style="width:84px"></th><th>ชื่อ / ลิงก์</th><th>โฆษณา</th><th>สถิติทั้งหมด</th><th>สถานะ</th><th></th></tr></thead>
+          <tbody id="qrBody"></tbody>
+        </table>
+        <div class="empty" id="qrEmpty" hidden><strong>ยังไม่มี QR code</strong>กด "+ สร้าง QR" เพื่อเริ่มต้น</div>
+      </div>
+    </section>
+
+    <!-- Ads -->
+    <section id="view-ads" hidden>
+      <div class="page-head">
+        <h1>โฆษณา</h1>
+        <div class="tools"><button class="btn primary" id="newAdBtn">+ เพิ่มโฆษณา</button></div>
+      </div>
+      <div class="ad-grid" id="adGrid"></div>
+      <div class="card empty" id="adEmpty" hidden><strong>ยังไม่มีโฆษณา</strong>เพิ่มโฆษณาแล้วเลือกใช้กับ QR ที่ต้องการ</div>
+    </section>
+  </main>
+</div>
+
+<!-- ───────── Dialog: QR form ───────── -->
+<dialog id="qrDlg">
+  <form id="qrForm" method="dialog">
+    <div class="dlg-head"><h2 id="qrDlgTitle">สร้าง QR ใหม่</h2><button type="button" class="x" data-close aria-label="ปิด">×</button></div>
+    <div class="dlg-body">
+      <label class="field"><span>ชื่อ</span><input type="text" id="qfName" required maxlength="200" placeholder="เช่น สไลด์บรรยาย 21 พ.ย."><small>แสดงให้คนสแกนเห็น และใช้ค้นหาในหลังบ้าน</small></label>
+      <label class="field"><span>ลิงก์ปลายทาง</span><input type="url" id="qfDest" required placeholder="https://drive.google.com/file/d/…"><small>แก้ลิงก์ทีหลังได้ โดยไม่ต้องพิมพ์ QR ใหม่</small></label>
+      <div id="qfDestNote" class="inline-note" hidden></div>
+      <label class="check" id="qfDirectRow" hidden>
+        <input type="checkbox" id="qfDirect">
+        <span>ดาวน์โหลดไฟล์ทันที<small>ข้ามหน้าพรีวิวของ Google Drive (ไฟล์ต้องแชร์เป็น "ทุกคนที่มีลิงก์")</small></span>
+      </label>
+
+      <div class="field"><span style="display:block;font-weight:500;margin-bottom:6px">โฆษณาก่อนดาวน์โหลด</span>
+        <div class="seg block" id="qfAdMode" role="group">
+          <button type="button" data-mode="none">ไม่มีโฆษณา</button>
+          <button type="button" data-mode="specific">เลือกโฆษณา</button>
+          <button type="button" data-mode="random">สุ่มโฆษณา</button>
+        </div>
+      </div>
+      <div class="sub-panel" id="qfAdPanel" hidden>
+        <label class="field" id="qfAdRow"><span>โฆษณาที่จะแสดง</span><select id="qfAd"></select></label>
+        <p class="hint" id="qfRandomHint" style="margin:-4px 0 14px" hidden>สุ่มจากโฆษณาที่เปิดใช้งานทุกครั้งที่มีคนสแกน</p>
+        <label class="field"><span>นับถอยหลังก่อนกดไปต่อได้ (วินาที)</span><input type="number" id="qfCountdown" min="0" max="60" value="5"><small>0 = กดไปหน้าดาวน์โหลดได้ทันที</small></label>
+      </div>
+      <label class="check"><input type="checkbox" id="qfActive" checked><span>เปิดใช้งาน<small>ถ้าปิด คนสแกนจะเห็นข้อความ "ไม่พบลิงก์นี้"</small></span></label>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" data-close>ยกเลิก</button>
+      <button type="submit" class="btn primary" id="qfSave">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ───────── Dialog: QR show ───────── -->
+<dialog id="qrShowDlg">
+  <div class="dlg-head"><h2 id="qsTitle">QR code</h2><button type="button" class="x" data-close aria-label="ปิด">×</button></div>
+  <div class="dlg-body">
+    <div class="qr-big" id="qsImg"></div>
+    <div class="qr-link"><input type="text" id="qsLink" readonly><button class="btn" id="qsCopy">คัดลอก</button></div>
+    <label class="check"><input type="checkbox" id="qsLabel" checked><span>ใส่ชื่อไว้ใต้ QR ในไฟล์ PNG</span></label>
+    <div class="btn-row">
+      <button class="btn primary" id="qsPng">ดาวน์โหลด PNG</button>
+      <button class="btn" id="qsSvg">ดาวน์โหลด SVG</button>
+      <a class="btn" id="qsOpen" target="_blank" rel="noopener">ทดสอบเปิดลิงก์</a>
+    </div>
+  </div>
+  <div class="dlg-foot"></div>
+</dialog>
+
+<!-- ───────── Dialog: Ad form ───────── -->
+<dialog id="adDlg">
+  <form id="adForm" method="dialog">
+    <div class="dlg-head"><h2 id="adDlgTitle">เพิ่มโฆษณา</h2><button type="button" class="x" data-close aria-label="ปิด">×</button></div>
+    <div class="dlg-body">
+      <label class="field"><span>ชื่อโฆษณา (ใช้ในหลังบ้าน)</span><input type="text" id="afName" required maxlength="200" placeholder="เช่น คอร์สออนไลน์ ธ.ค."></label>
+      <div class="field">
+        <span style="display:block;font-weight:500;margin-bottom:6px">รูปโฆษณา</span>
+        <div class="img-drop">
+          <div class="preview" id="afPreview">ไม่มีรูป</div>
+          <div style="flex:1;min-width:0">
+            <input type="file" id="afFile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+            <button type="button" class="btn" id="afPick">อัปโหลดรูป…</button>
+            <small class="hint" id="afUploadStatus">เก็บไว้ใน Google Drive ของคุณ · แนะนำแนวนอน 1200×675</small>
+          </div>
+        </div>
+        <div class="or">หรือวางลิงก์รูป</div>
+        <input type="url" id="afImageUrl" placeholder="https://…/banner.jpg">
+      </div>
+      <label class="field"><span>หัวข้อ <span class="muted" style="font-weight:400">(ไม่บังคับ)</span></span><input type="text" id="afHeadline" maxlength="200"></label>
+      <label class="field"><span>รายละเอียด <span class="muted" style="font-weight:400">(ไม่บังคับ)</span></span><textarea id="afDesc" maxlength="1000"></textarea></label>
+      <div class="row2">
+        <label class="field"><span>ลิงก์เมื่อกดโฆษณา</span><input type="url" id="afClick" placeholder="https://…"></label>
+        <label class="field"><span>ข้อความปุ่ม</span><input type="text" id="afBtn" maxlength="60" placeholder="ดูรายละเอียด"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="afActive" checked><span>เปิดใช้งาน<small>QR ที่ใช้โฆษณานี้จะไม่แสดงโฆษณาถ้าปิด</small></span></label>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" data-close>ยกเลิก</button>
+      <button type="submit" class="btn primary" id="afSave">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ───────── Dialog: password ───────── -->
+<dialog id="pwDlg">
+  <form id="pwForm" method="dialog">
+    <div class="dlg-head"><h2>เปลี่ยนรหัสผ่าน</h2><button type="button" class="x" data-close aria-label="ปิด">×</button></div>
+    <div class="dlg-body">
+      <label class="field"><span>รหัสผ่านปัจจุบัน</span><input type="password" id="pwCur" required autocomplete="current-password"></label>
+      <label class="field"><span>รหัสผ่านใหม่</span><input type="password" id="pwNew" required minlength="6" autocomplete="new-password"><small>อย่างน้อย 6 ตัวอักษร · ทุกเครื่องจะต้องเข้าสู่ระบบใหม่</small></label>
+      <label class="field"><span>ยืนยันรหัสผ่านใหม่</span><input type="password" id="pwNew2" required minlength="6" autocomplete="new-password"></label>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" data-close>ยกเลิก</button>
+      <button type="submit" class="btn primary">เปลี่ยนรหัสผ่าน</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="admin.js"></script>
+</body>
+</html>

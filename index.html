@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f5f6f8">
+<title>กำลังเปิดลิงก์…</title>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --text: #17191c;
+    --muted: #5d636e;
+    --line: #e2e5ea;
+    --accent: #0f6e66;
+    --accent-ink: #ffffff;
+    --accent-soft: #e3f1ef;
+    --track: #e8ebef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111315;
+      --surface: #1b1e21;
+      --text: #eceef1;
+      --muted: #a2a8b2;
+      --line: #2c3035;
+      --accent: #3fb3a6;
+      --accent-ink: #06201d;
+      --accent-soft: #17302d;
+      --track: #2a2e33;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px max(24px, env(safe-area-inset-bottom));
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; max-width: 440px; margin: auto 0; }
+  [hidden] { display: none !important; }
+
+  .state { text-align: center; padding: 48px 8px; }
+  .state h1 { font-size: 20px; font-weight: 600; margin: 18px 0 6px; }
+  .state p { color: var(--muted); margin: 0 0 18px; }
+  .spinner {
+    width: 36px; height: 36px; margin: 0 auto;
+    border: 3px solid var(--track); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .icon-circle {
+    width: 56px; height: 56px; margin: 0 auto; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent-soft); color: var(--accent);
+  }
+
+  .file {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; margin-bottom: 14px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  }
+  .file svg { flex: none; color: var(--accent); }
+  .file small { display: block; color: var(--muted); font-size: 13px; }
+  .file strong { display: block; font-weight: 600; word-break: break-word; }
+
+  .ad {
+    position: relative; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  }
+  .ad-label {
+    position: absolute; top: 10px; left: 10px; z-index: 1;
+    font-size: 12px; font-weight: 500; letter-spacing: .02em;
+    padding: 2px 8px; border-radius: 6px;
+    background: rgba(0,0,0,.55); color: #fff;
+  }
+  .ad-media { display: block; background: var(--track); }
+  .ad-media img { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; }
+  .ad-body { padding: 14px 16px 16px; }
+  .ad-body h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; line-height: 1.4; }
+  .ad-body p { margin: 0 0 12px; color: var(--muted); white-space: pre-line; }
+  .ad-body:empty { display: none; }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 50px; padding: 12px 18px;
+    font: inherit; font-weight: 600; text-decoration: none;
+    border-radius: 12px; border: 0; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-outline { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+  .btn-primary { position: relative; overflow: hidden; background: var(--accent); color: var(--accent-ink); margin-top: 14px; }
+  .btn-primary:disabled { background: var(--track); color: var(--muted); cursor: default; }
+  .btn-primary .fill {
+    position: absolute; inset: 0 auto 0 0; width: 0;
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .btn-primary .label { position: relative; }
+  .note { text-align: center; color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+  a.inline { color: var(--accent); font-weight: 500; }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <section id="loading" class="state" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1>กำลังเตรียมลิงก์</h1>
+    <p>รอสักครู่…</p>
+  </section>
+
+  <section id="redirect" class="state" hidden aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1>กำลังพาไปยังไฟล์ของคุณ</h1>
+    <p id="redirectName"></p>
+    <a id="fallbackLink" class="btn btn-outline" href="#">ถ้ายังไม่ไป แตะที่นี่</a>
+  </section>
+
+  <section id="error" class="state" hidden>
+    <div class="icon-circle" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+    </div>
+    <h1 id="errTitle">ไม่พบลิงก์นี้</h1>
+    <p id="errMsg">ลิงก์อาจถูกปิดใช้งานหรือพิมพ์ไม่ถูกต้อง</p>
+    <button id="retryBtn" class="btn btn-outline" hidden onclick="location.reload()">ลองอีกครั้ง</button>
+  </section>
+
+  <section id="adview" hidden>
+    <div class="file">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9.5 14.5 12 17l2.5-2.5"/></svg>
+      <div><small>ไฟล์ของคุณพร้อมแล้ว</small><strong id="fileName"></strong></div>
+    </div>
+
+    <article class="ad" aria-label="โฆษณา">
+      <span class="ad-label">โฆษณา</span>
+      <a id="adMedia" class="ad-media" target="_blank" rel="noopener sponsored"><img id="adImg" alt=""></a>
+      <div class="ad-body" id="adBody"></div>
+    </article>
+
+    <button id="continueBtn" class="btn btn-primary" disabled>
+      <span class="fill" id="continueFill"></span>
+      <span class="label" id="continueText">ไปหน้าดาวน์โหลด</span>
+    </button>
+    <p class="note" id="continueNote"></p>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  var CFG = window.QR_CONFIG || {};
+  var API = CFG.API_URL || '';
+  var params = new URLSearchParams(location.search);
+  var id = (params.get('id') || params.get('q') || '').trim();
+  var geo = {};
+  var $ = function (s) { return document.getElementById(s); };
+
+  function show(name) {
+    ['loading', 'redirect', 'error', 'adview'].forEach(function (n) { $(n).hidden = n !== name; });
+  }
+  function fail(title, msg, retry) {
+    $('errTitle').textContent = title;
+    $('errMsg').textContent = msg;
+    $('retryBtn').hidden = !retry;
+    document.title = title;
+    show('error');
+  }
+  function withTimeout(p, ms) {
+    return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, ms); })]);
+  }
+  function safeUrl(u) { return /^https?:\/\//i.test(u || '') ? u : null; }
+
+  // ตำแหน่งโดยประมาณจาก IP (ประเทศ/จังหวัด) — ไม่ระบุตัวบุคคล
+  function fetchGeo() {
+    return withTimeout(fetch('https://get.geojs.io/v1/ip/geo.json').then(function (r) { return r.json(); }), 1800)
+      .then(function (g) { return { country: g.country || '', region: g.region || '', city: g.city || '' }; })
+      .catch(function () { return {}; });
+  }
+
+  // ส่งสถิติแบบไม่รอผล — ทำงานต่อได้แม้หน้าเว็บกำลังเปลี่ยนไปหน้าอื่น
+  function log(types, extra) {
+    var payload = JSON.stringify(Object.assign({ action: 'log', id: id, types: [].concat(types) }, geo, extra || {}));
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon(API, new Blob([payload], { type: 'text/plain' }))) return;
+    } catch (e) {}
+    try { fetch(API, { method: 'POST', body: payload, mode: 'no-cors', keepalive: true }); } catch (e) {}
+  }
+
+  if (!id) return fail('ลิงก์ไม่ถูกต้อง', 'ไม่พบรหัส QR ในลิงก์นี้');
+  if (!/^https?:\/\//.test(API)) return fail('ระบบยังไม่พร้อม', 'ผู้ดูแลยังไม่ได้ตั้งค่า API_URL ใน config.js');
+
+  var configReq = withTimeout(
+    fetch(API + (API.indexOf('?') < 0 ? '?' : '&') + 'action=config&id=' + encodeURIComponent(id))
+      .then(function (r) { return r.json(); }),
+    20000
+  );
+
+  Promise.all([configReq, fetchGeo()]).then(function (res) {
+    var cfg = res[0];
+    geo = res[1];
+    if (!cfg || !cfg.ok) return fail('ไม่พบลิงก์นี้', 'ลิงก์อาจถูกปิดใช้งานหรือพิมพ์ไม่ถูกต้อง');
+    var dest = safeUrl(cfg.url);
+    if (!dest) return fail('ลิงก์ปลายทางไม่ถูกต้อง', 'กรุณาติดต่อผู้ส่งลิงก์');
+    if (cfg.ad && safeUrl(cfg.ad.imageUrl)) renderAd(cfg, dest);
+    else goDirect(cfg, dest);
+  }).catch(function () {
+    fail('เชื่อมต่อไม่สำเร็จ', 'ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง', true);
+  });
+
+  function goDirect(cfg, dest) {
+    document.title = cfg.name || 'กำลังเปิดไฟล์';
+    $('redirectName').textContent = cfg.name || '';
+    $('fallbackLink').href = dest;
+    show('redirect');
+    log(['scan', 'download']);
+    setTimeout(function () { location.replace(dest); }, 250);
+  }
+
+  function renderAd(cfg, dest) {
+    var ad = cfg.ad;
+    var clickUrl = safeUrl(ad.clickUrl);
+    var clicked = false;
+    document.title = cfg.name || 'ดาวน์โหลดไฟล์';
+    $('fileName').textContent = cfg.name || 'ไฟล์';
+
+    var img = $('adImg');
+    img.src = ad.imageUrl;
+    img.alt = ad.headline || 'โฆษณา';
+
+    var body = $('adBody');
+    if (ad.headline) { var h = document.createElement('h2'); h.textContent = ad.headline; body.appendChild(h); }
+    if (ad.description) { var p = document.createElement('p'); p.textContent = ad.description; body.appendChild(p); }
+
+    var media = $('adMedia');
+    if (clickUrl) {
+      media.href = clickUrl;
+      var cta = document.createElement('a');
+      cta.className = 'btn btn-outline';
+      cta.href = clickUrl; cta.target = '_blank'; cta.rel = 'noopener sponsored';
+      cta.textContent = ad.buttonText || 'ดูรายละเอียด';
+      body.appendChild(cta);
+      [media, cta].forEach(function (el) {
+        el.addEventListener('click', function () {
+          if (clicked) return; // นับ 1 ครั้งต่อการเปิดหน้า
+          clicked = true;
+          log('ad_click', { adId: ad.id });
+        });
+      });
+    } else {
+      media.removeAttribute('href');
+    }
+
+    show('adview');
+    log('scan', { adId: ad.id });
+
+    var btn = $('continueBtn'), text = $('continueText'), fill = $('continueFill');
+    var total = Math.max(0, Number(cfg.countdown) || 0);
+    var left = total;
+    function ready() {
+      btn.disabled = false;
+      text.textContent = 'ไปหน้าดาวน์โหลด →';
+      fill.style.width = '0';
+      $('continueNote').textContent = '';
+    }
+    if (total === 0) {
+      ready();
+    } else {
+      text.textContent = 'ไปหน้าดาวน์โหลดได้ใน ' + left + ' วินาที';
+      fill.style.transition = 'width ' + total + 's linear';
+      requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = '100%'; }); });
+      var timer = setInterval(function () {
+        left -= 1;
+        if (left <= 0) { clearInterval(timer); ready(); }
+        else text.textContent = 'ไปหน้าดาวน์โหลดได้ใน ' + left + ' วินาที';
+      }, 1000);
+    }
+
+    btn.addEventListener('click', function () {
+      if (btn.disabled) return;
+      log('download', { adId: ad.id });
+      text.textContent = 'กำลังเปิดไฟล์…';
+      setTimeout(function () { location.href = dest; }, 200);
+    });
+  }
+})();
+</script>
+</body>
+</html>
